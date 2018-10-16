@@ -2,6 +2,7 @@
 
 import sys
 import rospy
+import math
 from copy import deepcopy
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import NavSatFix
@@ -16,6 +17,7 @@ class drone():
     def __init__(self):
         self.gps_now = NavSatFix()
         self.pose = PoseStamped()
+        self.target_pose = PoseStamped()
         
         rospy.wait_for_service('/mavros/set_mode')
         rospy.wait_for_service('/mavros/cmd/takeoff')
@@ -24,6 +26,9 @@ class drone():
 
         rospy.Subscriber('/mavros/global_position/raw/fix', NavSatFix, self.gps_cb)
         rospy.Subscriber('/mavros/local_position/pose', PoseStamped, self.pose_cb)
+
+        # set target position publisher object
+        self.set_pos = rospy.Publisher('/mavros/setpoint_position/local', PoseStamped, queue_size = 10)
 
         self.set_mode = rospy.ServiceProxy('/mavros/set_mode', SetMode)
         self.takeoff = rospy.ServiceProxy('/mavros/cmd/takeoff', CommandTOL)
@@ -39,9 +44,36 @@ class drone():
             rospy.loginfo('Disarming the motors')
         resp = self.arming(val)
         rospy.loginfo(resp)
+        # if resp != 0:
+        #     rospy.logerr('Arming Failed, trying again')
+        #     rospy.sleep(3)
+        #     self.arm(val)
+
+
+
+    def cart_distance(self, p1, p2):
+        '''
+        Returns cartesian distance between two points.
+        - points in PoseStamped format
+        '''
+        return math.sqrt((p1.pose.position.x - p2.pose.position.x)**2 + (p1.pose.position.y - p2.pose.position.y)**2)
+
 
     def get_gps_home(self):
         return self.gps_home.latitude , self.gps_home.longitude, self.gps_home.altitude
+
+
+    def go_to_pos(self,x,y,z = 3.0):
+        self.target_pose.pose.position.x = x
+        self.target_pose.pose.position.y = y
+        self.target_pose.pose.position.z = z
+        rospy.loginfo('Going to point {} , {}, {}'.format(x,y,z))
+        self.set_pos.publish(self.target_pose)
+        while self.cart_distance(self.target_pose, self.pose) > 0.1:
+            if rospy.is_shutdown():
+                break
+            pass
+        rospy.loginfo('Setpoint achieved')
 
     def mode(self, mode = '0'):
         name = {"0":"STABILIZE",
@@ -98,7 +130,19 @@ class drone():
         wp5.x_lat = 42.168019
         wp5.y_long = -88.54291
         mission.append(wp5)
+        rospy.loginfo('Sending mission')
+        resp = self.send_wp(waypoints = mission)
+        rospy.loginfo(resp)
 
+    def send_mission_from_file(self):
+        mission = []
+        with open('/home/kashish/ardu_ws/src/bebop_ardu/scripts/path1.txt','r') as file:
+            for row in file:
+                wp = Waypoint()
+                x,y = row.split(',')
+                wp.command = 16
+                wp.x_lat, wp.y_long = map(float,row.split(','))
+                mission.append(wp)
         rospy.loginfo('Sending mission')
         resp = self.send_wp(waypoints = mission)
         rospy.loginfo(resp)
@@ -108,6 +152,8 @@ class drone():
         rospy.loginfo('Taking off')
         resp = self.takeoff(altitude = alt)
         while abs(self.pose.pose.position.z - alt) > 0.1:
+            if rospy.is_shutdown():
+                break
             pass
         rospy.loginfo(resp)
 
@@ -124,12 +170,14 @@ def main():
     rospy.init_node('fly')
     bebop = drone()
     bebop.set_gps_home()
-    bebop.send_mission()
+    bebop.send_mission_from_file()
     bebop.get_gps_home()
     bebop.mode('4')
     bebop.arm(True)
     bebop.take_off(3)
-    bebop.mode('3')
+    # bebop.mode('3')
+    bebop.go_to_pos(-50, 100, 3)
+    bebop.mode('6')
     # rospy.sleep(5)
     # bebop.mode('4')
 
