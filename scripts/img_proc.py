@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import cv2
 import numpy as np
-from satellite import sat_image
+from satellite import sat_image,pixelXYToLatLong
 
-def gen_path(image, width = 10):
+def gen_path(image,xscale,yscale,lat2,lon2, width = 10):
     y_end, x_end, _ = image.shape
     x = width
     y = width
@@ -15,12 +15,12 @@ def gen_path(image, width = 10):
             image[y, x] = [0,50,50]
             x_list.append(x)
             y_list.append(y)
-            if flag: 
+            if flag:
                 if not image[y+ width -1 , x][0] == 0:
                     y += 1
                 else:
                     break
-            else: 
+            else:
                 if not image[y- width + 1, x][0] == 0:
                     y -= 1
                 else:
@@ -34,11 +34,15 @@ def gen_path(image, width = 10):
     with open("path.txt", "w") as file:
         for row in zip(y_list, x_list):
             file.write(str(row[0])+","+str(row[1]) + "\n")
+            lat=row[0]*xscale+lat2;
+            lon=row[1]*xscale+lon2;
+
+            file.write(str(lat)+","+str(lon) + "\n")
 
     return image
 
 if __name__ == '__main__' :
- 
+
     # dummy values
     lat1 = 42.168019
     lon1 = -88.542951
@@ -54,18 +58,21 @@ if __name__ == '__main__' :
     # lon2 = input ('Enter longitude2: ')
     # levelOfDetail = input('Enter level of detail: ')
 
-    coord_array = [lat1,lon1,lat2,lon2,levelOfDetail]    
-    
+    coord_array = [lat1,lon1,lat2,lon2,levelOfDetail]
+
     im = sat_image(coord_array)
-    cv2.resize(im, (0,0), fx = 0.1, fy = 0.1)
+    # cv2.resize(im, (0,0), fx = 0.1, fy = 0.1)
     r = cv2.selectROI(im, False, False)
 
     im[:,:] = [255,255,255]
     im[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])] = [0,0,0]
 
+    height, width = im.shape[:2]
+    xscale=(lat1-lat2)/height
+    yscale=(lon2-lon1)/width
 
     # Display cropped image
-    image = gen_path(im)
+    image = gen_path(im,xscale,yscale,lat2,lon2)
     cv2.imshow("Image_out", image)
     cv2.imwrite('Path.png', image)
 
