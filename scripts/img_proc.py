@@ -39,7 +39,7 @@ def gen_path(image,xscale,yscale,lat2,lon2, width = 10):
         for row in zip(y_list, x_list):
             # file.write(str(row[0])+","+str(row[1]) + "\n")
             lat=row[0]*xscale+lat2;
-            lon=row[1]*xscale+lon2;
+            lon=row[1]*yscale+lon2;
 
             file.write(str(lat)+","+str(lon) + "\n")
 
@@ -73,7 +73,7 @@ if __name__ == '__main__' :
 
     height, width = im.shape[:2]
     xscale=(lat1-lat2)/height
-    yscale=(lon2-lon1)/width
+    yscale=(lon1-lon2)/width
 
     # Display cropped image
     image = gen_path(im,xscale,yscale,lat2,lon2)
