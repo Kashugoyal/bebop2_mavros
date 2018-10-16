@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import cv2
 import numpy as np
-from satellite import sat_image,pixelXYToLatLong
+from satellite import sat_image
 
 def gen_path(image,xscale,yscale,lat2,lon2, width = 10):
     y_end, x_end, _ = image.shape
@@ -10,11 +10,11 @@ def gen_path(image,xscale,yscale,lat2,lon2, width = 10):
     flag = True
     x_list = []
     y_list = []
+    x_list.append(x)
+    y_list.append(y)
     while x <= x_end - width:
         while y <= y_end - width and y >= width:
             image[y, x] = [0,50,50]
-            x_list.append(x)
-            y_list.append(y)
             if flag:
                 if not image[y+ width -1 , x][0] == 0:
                     y += 1
@@ -25,15 +25,19 @@ def gen_path(image,xscale,yscale,lat2,lon2, width = 10):
                     y -= 1
                 else:
                     break
+        x_list.append(x)
+        y_list.append(y)
         image[y ,x : x+width] = [0,50,50]
         x += width
         flag  = not flag
         if flag: y += 1
         else: y -= 1
+        x_list.append(x)
+        y_list.append(y)
 
     with open("path.txt", "w") as file:
         for row in zip(y_list, x_list):
-            file.write(str(row[0])+","+str(row[1]) + "\n")
+            # file.write(str(row[0])+","+str(row[1]) + "\n")
             lat=row[0]*xscale+lat2;
             lon=row[1]*xscale+lon2;
 

@@ -136,7 +136,7 @@ class drone():
 
     def send_mission_from_file(self):
         mission = []
-        with open('/home/kashish/ardu_ws/src/bebop_ardu/scripts/path1.txt','r') as file:
+        with open('/home/kashish/ardu_ws/src/bebop_ardu/scripts/path.txt','r') as file:
             for row in file:
                 wp = Waypoint()
                 x,y = row.split(',')
@@ -175,9 +175,9 @@ def main():
     bebop.mode('4')
     bebop.arm(True)
     bebop.take_off(3)
-    # bebop.mode('3')
-    bebop.go_to_pos(-50, 100, 3)
-    bebop.mode('6')
+    bebop.mode('3')
+    # bebop.go_to_pos(-50, 100, 3)
+    # bebop.mode('6')
     # rospy.sleep(5)
     # bebop.mode('4')
 
