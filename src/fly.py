@@ -1,38 +1,119 @@
 #!/usr/bin/env python
 
+import sys
 import rospy
+from copy import deepcopy
+from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import NavSatFix
+from mavros_msgs.msg import Waypoint
 from mavros_msgs.srv import CommandTOL
 from mavros_msgs.srv import CommandBool
 from mavros_msgs.srv import SetMode
-import sys
-from copy import deepcopy
-
+from mavros_msgs.srv import WaypointPush
 
 class drone():
 
     def __init__(self):
         self.gps_now = NavSatFix()
+        self.pose = PoseStamped()
+        
+        rospy.wait_for_service('/mavros/set_mode')
+        rospy.wait_for_service('/mavros/cmd/takeoff')
+        rospy.wait_for_service('/mavros/cmd/arming')
+        rospy.wait_for_service('/mavros/mission/push')
+
         rospy.Subscriber('/mavros/global_position/raw/fix', NavSatFix, self.gps_cb)
+        rospy.Subscriber('/mavros/local_position/pose', PoseStamped, self.pose_cb)
+
         self.set_mode = rospy.ServiceProxy('/mavros/set_mode', SetMode)
         self.takeoff = rospy.ServiceProxy('/mavros/cmd/takeoff', CommandTOL)
-        self.arm = rospy.ServiceProxy('/mavros/cmd/arming', CommandBool)
+        self.arming = rospy.ServiceProxy('/mavros/cmd/arming', CommandBool)
+        self.send_wp = rospy.ServiceProxy('/mavros/mission/push', WaypointPush)
+        
         rospy.loginfo('Drone initialized')
 
-    def set_gps_home(self):
-        self.gps_home = deepcopy(self.gps_now)
-        # print self.gps_home.latitude
-        print 'setting home'
+    def arm(self, val):
+        if val:
+            rospy.loginfo('Arming the motors')
+        else:
+            rospy.loginfo('Disarming the motors')
+        resp = self.arming(val)
+        rospy.loginfo(resp)
 
+    def get_gps_home(self):
+        return self.gps_home.latitude , self.gps_home.longitude, self.gps_home.altitude
 
     def mode(self, mode = '0'):
+        name = {"0":"STABILIZE",
+                "1":"ACRO",
+                "2":"ALT_HOLD",
+                "3":"AUTO",
+                "4":"GUIDED",
+                "5":"LOITER",
+                "6":"RTL",
+                "7":"CIRCLE",
+                "8":"POSITION",
+                "9":"LAND"}
+        rospy.loginfo('Setting the autopilot mode to {}'.format(name[mode]))
         resp  = self.set_mode(custom_mode = mode)
-        print resp
-        print self.gps_now.latitude, self.gps_home.latitude
+        rospy.loginfo(resp)
 
+    def pose_cb(self,data):
+        self.pose = data
+        return
+
+    def set_gps_home(self):
+        if self.gps_now.header.seq:
+            self.gps_home = deepcopy(self.gps_now)
+            print 'setting home'
+        else:
+            rospy.logwarn('GPS not available')
+            rospy.sleep(1)
+            self.set_gps_home()
+
+    def send_mission(self):
+        wp1 = Waypoint()
+        wp2 = Waypoint()
+        wp3 = Waypoint()
+        wp4 = Waypoint()
+        wp5 = Waypoint()
+        mission = []
+        wp1.command = 16
+        wp2.command = 16
+        wp3.command = 16
+        wp4.command = 16
+        wp5.command = 16
+        wp4.x_lat = 42.168019
+        wp4.y_long = -88.54291
+        mission.append(wp4)
+        wp1.x_lat = 42.168019
+        wp1.y_long = -88.537836
+        mission.append(wp1)
+        wp2.x_lat = 42.161040
+        wp2.y_long = -88.537836
+        mission.append(wp2)
+        wp3.x_lat = 42.161040
+        wp3.y_long = -88.54291
+        mission.append(wp3)
+        wp5.x_lat = 42.168019
+        wp5.y_long = -88.54291
+        mission.append(wp5)
+
+        rospy.loginfo('Sending mission')
+        resp = self.send_wp(waypoints = mission)
+        rospy.loginfo(resp)
+
+
+    def take_off(self, alt = 100):
+        rospy.loginfo('Taking off')
+        resp = self.takeoff(altitude = alt)
+        while abs(self.pose.pose.position.z - alt) > 0.1:
+            pass
+        rospy.loginfo(resp)
 
     def gps_cb(self,data):
         if data:
+            self.gps_now.header  = data.header
             self.gps_now.latitude = data.latitude
             self.gps_now.longitude = data.longitude
             self.gps_now.altitude = data.altitude
@@ -43,14 +124,19 @@ def main():
     rospy.init_node('fly')
     bebop = drone()
     bebop.set_gps_home()
+    bebop.send_mission()
+    bebop.get_gps_home()
     bebop.mode('4')
-    rospy.sleep(5)
-    bebop.mode('0')
-    # bebop.set_gps_home()
-    rospy.sleep(5)
-    bebop.mode('4')
+    bebop.arm(True)
+    bebop.take_off(3)
+    bebop.mode('3')
+    # rospy.sleep(5)
+    # bebop.mode('4')
 
-    sys.exit()
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except rospy.service.ServiceException:
+        print '\n.....Shutting Down....'
+
