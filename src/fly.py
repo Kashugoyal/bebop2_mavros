@@ -69,7 +69,7 @@ class drone():
         self.target_pose.pose.position.z = z
         rospy.loginfo('Going to point {} , {}, {}'.format(x,y,z))
         self.set_pos.publish(self.target_pose)
-        while self.cart_distance(self.target_pose, self.pose) > 0.1:
+        while self.cart_distance(self.target_pose, self.pose) > 1:
             if rospy.is_shutdown():
                 break
             pass
@@ -154,8 +154,9 @@ class drone():
         filename = user_dir + '/ardu_ws/src/bebop_ardu/scripts/path_local.txt'
         with open(filename,'r') as file:
             for row in file:
-                rospy.loginfo('Going to position {},{}'.format(row.split(',')))
-                self.go_to_pos(map(float, row.split(',')), 3.0)
+                y,x = map(float, row.split(','))
+                rospy.loginfo('Going to position {0},{1}'.format(x,y))
+                self.go_to_pos(x/1.19,y/1.19, 3.0)
 
     def take_off(self, alt = 100):
         rospy.loginfo('Taking off')

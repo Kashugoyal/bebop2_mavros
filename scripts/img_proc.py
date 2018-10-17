@@ -37,7 +37,7 @@ def gen_path(image,xscale,yscale,lat2,lon2, width = 10):
 
     with open("path_local.txt", "w") as file:
         for row in zip(y_list, x_list):
-            file.write(str(row[0])+","+str(row[1]) + "\n")
+            file.write(str(-row[0])+","+str(row[1]) + "\n")
 
     with open("path.txt", "w") as file:
         for row in zip(y_list, x_list):
