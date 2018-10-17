@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import os
 import sys
 import rospy
 import math
@@ -44,10 +44,10 @@ class drone():
             rospy.loginfo('Disarming the motors')
         resp = self.arming(val)
         rospy.loginfo(resp)
-        # if resp != 0:
-        #     rospy.logerr('Arming Failed, trying again')
-        #     rospy.sleep(3)
-        #     self.arm(val)
+        if resp.success == False:
+            rospy.logerr('Arming Failed, trying again')
+            rospy.sleep(3)
+            self.arm(val)
 
 
 
@@ -136,7 +136,9 @@ class drone():
 
     def send_mission_from_file(self):
         mission = []
-        with open('/home/kashish/ardu_ws/src/bebop_ardu/scripts/path.txt','r') as file:
+        user_dir = os.path.expanduser('~')
+        filename = user_dir + '/ardu_ws/src/bebop_ardu/scripts/path.txt'
+        with open(filename,'r') as file:
             for row in file:
                 wp = Waypoint()
                 x,y = row.split(',')
@@ -147,6 +149,13 @@ class drone():
         resp = self.send_wp(waypoints = mission)
         rospy.loginfo(resp)
 
+    def setpoint_from_file(self):
+        user_dir = os.path.expanduser('~')
+        filename = user_dir + '/ardu_ws/src/bebop_ardu/scripts/path_local.txt'
+        with open(filename,'r') as file:
+            for row in file:
+                rospy.loginfo('Going to position {},{}'.format(row.split(',')))
+                self.go_to_pos(map(float, row.split(',')), 3.0)
 
     def take_off(self, alt = 100):
         rospy.loginfo('Taking off')
@@ -170,11 +179,11 @@ def main():
     rospy.init_node('fly')
     bebop = drone()
     bebop.set_gps_home()
-    bebop.send_mission_from_file()
-    # bebop.get_gps_home()
-    # bebop.mode('4')
-    # bebop.arm(True)
-    # bebop.take_off(3)
+    bebop.get_gps_home()
+    bebop.mode('4')
+    bebop.arm(True)
+    bebop.take_off(3)
+    bebop.setpoint_from_file()
     # bebop.mode('3')
     # bebop.go_to_pos(-50, 100, 3)
     # bebop.mode('6')
