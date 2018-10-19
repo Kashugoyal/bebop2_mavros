@@ -41,8 +41,8 @@ def gen_path(image,xscale,yscale,lat2,lon2, width = 10):
 
     with open("path.txt", "w") as file:
         for row in zip(y_list, x_list):
-            lat=row[0]*xscale+lat2;
-            lon=row[1]*yscale+lon2;
+            lat=-row[0]*xscale+lat2;
+            lon=-row[1]*yscale+lon2;
 
             file.write(str(lat)+","+str(lon) + "\n")
 
@@ -79,7 +79,7 @@ if __name__ == '__main__' :
     yscale=(lon1-lon2)/width
 
     # Display cropped image
-    image = gen_path(im,xscale,yscale,lat2,lon2)
+    image = gen_path(im,xscale,yscale,lat1,lon1)
     cv2.imshow("Image_out", image)
     cv2.imwrite('Path.png', image)
 
