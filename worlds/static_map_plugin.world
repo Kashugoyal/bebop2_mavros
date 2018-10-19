@@ -9,8 +9,9 @@
     <plugin name="map" filename="libStaticMapPlugin.so">
       <center>42.168019 -88.542951</center>
       <world_size>100</world_size>
+      <zoom>17</zoom>
       <map_type>satellite</map_type>
-      <api_key>APIKEY</api_key>
+      <api_key>api_key</api_key>
       <use_cache>false</use_cache>
     </plugin>
   </world>
