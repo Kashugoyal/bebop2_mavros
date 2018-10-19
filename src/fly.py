@@ -18,7 +18,7 @@ class drone():
         self.gps_now = NavSatFix()
         self.pose = PoseStamped()
         self.target_pose = PoseStamped()
-        
+
         rospy.wait_for_service('/mavros/set_mode')
         rospy.wait_for_service('/mavros/cmd/takeoff')
         rospy.wait_for_service('/mavros/cmd/arming')
@@ -34,7 +34,7 @@ class drone():
         self.takeoff = rospy.ServiceProxy('/mavros/cmd/takeoff', CommandTOL)
         self.arming = rospy.ServiceProxy('/mavros/cmd/arming', CommandBool)
         self.send_wp = rospy.ServiceProxy('/mavros/mission/push', WaypointPush)
-        
+
         rospy.loginfo('Drone initialized')
 
     def arm(self, val):
@@ -142,7 +142,7 @@ class drone():
     def send_mission_from_file(self):
         mission = []
         user_dir = os.path.expanduser('~')
-        filename = user_dir + '/ardu_ws/src/bebop_ardu/scripts/path.txt'
+        filename = user_dir + '/ardu_ws/src/bebop2_mavros/path.txt'
         with open(filename,'r') as file:
             for row in file:
                 wp = Waypoint()
@@ -156,7 +156,8 @@ class drone():
 
     def setpoint_from_file(self):
         user_dir = os.path.expanduser('~')
-        filename = user_dir + '/ardu_ws/src/bebop_ardu/scripts/path_local.txt'
+        filename = user_dir + '/ardu_ws/src/bebop2_mavros/path_local.txt'
+
         with open(filename,'r') as file:
             for row in file:
                 y,x = map(float, row.split(','))
@@ -185,11 +186,12 @@ def main():
     rospy.init_node('fly')
     bebop = drone()
     bebop.set_gps_home()
+    bebop.send_mission_from_file()
     bebop.get_gps_home()
-    bebop.mode('4')
+    bebop.mode('3')
     bebop.arm(True)
-    bebop.take_off(3)
-    bebop.setpoint_from_file()
+    bebop.take_off(4)
+    # bebop.setpoint_from_file()
     # bebop.mode('3')
     # bebop.go_to_pos(-50, 100, 3)
     # bebop.mode('6')
