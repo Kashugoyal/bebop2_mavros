@@ -88,7 +88,12 @@ class drone():
                 "9":"LAND"}
         rospy.loginfo('Setting the autopilot mode to {}'.format(name[mode]))
         resp  = self.set_mode(custom_mode = mode)
-        rospy.loginfo(resp)
+        if resp.success == False:
+            rospy.logerr("Failed to set the mode to {}".format(name[mode]))
+            return 
+        else:
+            rospy.loginfo("Mode set successfully")
+
 
     def pose_cb(self,data):
         self.pose = data
