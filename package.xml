@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>bebop_ardu</name>
+  <name>bebop2_mavros</name>
   <version>0.0.0</version>
-  <description>The bebop_ardu package</description>
+  <description>The Bebop MAVROS package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

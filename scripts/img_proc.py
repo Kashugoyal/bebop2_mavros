@@ -43,19 +43,25 @@ def gen_path(image,xscale,yscale,lat2,lon2, width = 10):
         for row in zip(y_list, x_list):
             lat=-row[0]*xscale+lat2;
             lon=-row[1]*yscale+lon2;
-
             file.write(str(lat)+","+str(lon) + "\n")
 
     return image
 
 if __name__ == '__main__' :
 
-    # dummy values
-    lat1 = 42.168019
-    lon1 = -88.542951
-    lat2 = 42.161040
-    lon2 = -88.537836
-    levelOfDetail = 17
+    # dummy values - Farm
+    # lat1 = 42.168019
+    # lon1 = -88.542951
+    # lat2 = 42.161040
+    # lon2 = -88.537836
+    # levelOfDetail = 17
+
+    # dummy values - Lakeside
+    lat1 =  42.055205
+    lon1 = -87.671179
+    lat2 = 42.055047
+    lon2 = -87.670780
+    levelOfDetail = 18
 
     # At level 17 1 pixel corresponds to square of side 1.19 m
 
@@ -82,5 +88,5 @@ if __name__ == '__main__' :
     image = gen_path(im,xscale,yscale,lat1,lon1)
     cv2.imshow("Image_out", image)
     cv2.imwrite('Path.png', image)
-
     cv2.waitKey(0)
+    print "All files genereated successfully."
