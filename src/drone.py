@@ -5,7 +5,7 @@ import math
 from copy import deepcopy
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import NavSatFix, BatteryState
-from mavros_msgs.msg import Waypoint, WaypointReached
+from mavros_msgs.msg import Waypoint, WaypointReached, State
 from mavros_msgs.srv import SetMode, StreamRate, StreamRateRequest
 from mavros_msgs.srv import CommandTOL, CommandBool
 from mavros_msgs.srv import WaypointPush
@@ -18,6 +18,8 @@ class drone():
         self.target_pose = PoseStamped()
         self.num_wp = 0
         self.curr_wp = None
+        self.armed = False
+        self.curr_mode = None
         rospy.wait_for_service('/mavros/set_mode')
         rospy.wait_for_service('/mavros/cmd/takeoff')
         rospy.wait_for_service('/mavros/cmd/arming')
@@ -28,6 +30,7 @@ class drone():
         rospy.Subscriber('/mavros/local_position/pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/mavros/mission/reached', WaypointReached, self.wp_cb)
         rospy.Subscriber('/mavros/battery', BatteryState, self.battery_cb)
+        rospy.Subscriber('/mavros/state', State, self.state_cb)
         # set target position publisher object
         self.set_pos = rospy.Publisher('/mavros/setpoint_position/local', PoseStamped, queue_size = 10)
         # set up service proxies
@@ -57,12 +60,11 @@ class drone():
 
     def battery_cb(self,data):
         if data:
-            if data.percentage < 0.3:
+            if data.percentage < 0.25:
                 rospy.logerr("Battery Critically low, landing now")
-                self.mode('9')
                 rospy.signal_shutdown(" Node closed, battery issue.")
-            elif data.percentage < 0.4:
-                rospy.logwarn("Battery Low - {:.2%}".format(data.percentage*100))
+            elif data.percentage < 0.15:
+                rospy.logwarn("Battery Low - {:.2%}".format(data.percentage))
         return
 
 
@@ -94,6 +96,8 @@ class drone():
     def land(self):
         self.mode('9')
         rospy.logwarn("Landing the robot right now ..")
+        while self.armed:
+            continue
         rospy.sleep(1)
 
 
@@ -181,6 +185,13 @@ class drone():
                 y,x = map(float, row.split(','))
                 rospy.loginfo('Going to position {0},{1}'.format(x,y))
                 self.go_to_pos(x/1.19,y/1.19, 3.0)
+
+
+    def state_cb(self,data):
+        if data:
+            self.armed = data.armed
+            self.curr_mode = data.mode
+        return
 
 
     def take_off(self, alt = 100):
