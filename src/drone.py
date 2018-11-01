@@ -6,9 +6,8 @@ from copy import deepcopy
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import NavSatFix, BatteryState
 from mavros_msgs.msg import Waypoint, WaypointReached
-from mavros_msgs.srv import CommandTOL
-from mavros_msgs.srv import CommandBool
-from mavros_msgs.srv import SetMode
+from mavros_msgs.srv import SetMode, StreamRate, StreamRateRequest
+from mavros_msgs.srv import CommandTOL, CommandBool
 from mavros_msgs.srv import WaypointPush
 
 class drone():
@@ -19,26 +18,29 @@ class drone():
         self.target_pose = PoseStamped()
         self.num_wp = 0
         self.curr_wp = None
-
         rospy.wait_for_service('/mavros/set_mode')
         rospy.wait_for_service('/mavros/cmd/takeoff')
         rospy.wait_for_service('/mavros/cmd/arming')
         rospy.wait_for_service('/mavros/mission/push')
-
+        rospy.wait_for_service('/mavros/set_stream_rate')
+        #set up topic subscribers
         rospy.Subscriber('/mavros/global_position/raw/fix', NavSatFix, self.gps_cb)
         rospy.Subscriber('/mavros/local_position/pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/mavros/mission/reached', WaypointReached, self.wp_cb)
         rospy.Subscriber('/mavros/battery', BatteryState, self.battery_cb)
-
         # set target position publisher object
         self.set_pos = rospy.Publisher('/mavros/setpoint_position/local', PoseStamped, queue_size = 10)
-
+        # set up service proxies
+        self.stream = rospy.ServiceProxy('/mavros/set_stream_rate',StreamRate)
         self.set_mode = rospy.ServiceProxy('/mavros/set_mode', SetMode)
         self.takeoff = rospy.ServiceProxy('/mavros/cmd/takeoff', CommandTOL)
         self.arming = rospy.ServiceProxy('/mavros/cmd/arming', CommandBool)
         self.send_wp = rospy.ServiceProxy('/mavros/mission/push', WaypointPush)
+        # set stream using the service
+        self.set_stream()
+        rospy.on_shutdown(self.land)
+        rospy.loginfo('Drone initialized ...')
 
-        rospy.loginfo('Drone initialized')
 
     def arm(self, val):
         if val:
@@ -89,6 +91,12 @@ class drone():
         rospy.loginfo('Setpoint achieved')
 
 
+    def land(self):
+        self.mode('9')
+        rospy.logwarn("Landing the robot right now ..")
+        rospy.sleep(1)
+
+
     def mission_completed(self):
         if self.curr_wp < self.num_wp:
             return False
@@ -119,20 +127,13 @@ class drone():
         self.pose = data
         return
 
-    def set_gps_home(self):
-        if self.gps_now.header.seq:
-            self.gps_home = deepcopy(self.gps_now)
-            print 'setting home'
-        else:
-            rospy.logwarn('GPS not available')
-            rospy.sleep(1)
-            self.set_gps_home()
 
     def send_mission(self, mission):
 
         rospy.loginfo('Sending mission')
         resp = self.send_wp(waypoints = mission)
         rospy.loginfo(resp)
+
 
     def send_mission_from_file(self):
         mission = []
@@ -151,6 +152,26 @@ class drone():
         resp = self.send_wp(waypoints = mission)
         rospy.loginfo(resp)
 
+
+    def set_gps_home(self):
+        if self.gps_now.header.seq:
+            self.gps_home = deepcopy(self.gps_now)
+            print 'setting home'
+        else:
+            rospy.logwarn('GPS not available')
+            rospy.sleep(1)
+            self.set_gps_home()
+
+
+    def set_stream(self):
+        val = StreamRateRequest()
+        val.stream_id = 0
+        val.message_rate = 10
+        val.on_off = 1
+        self.stream(val)
+        rospy.loginfo('Stream rate set')
+
+
     def setpoint_from_file(self):
         user_dir = os.path.expanduser('~')
         filename = user_dir + '/ardu_ws/src/bebop2_mavros/scripts/path_local.txt'
@@ -161,6 +182,7 @@ class drone():
                 rospy.loginfo('Going to position {0},{1}'.format(x,y))
                 self.go_to_pos(x/1.19,y/1.19, 3.0)
 
+
     def take_off(self, alt = 100):
         rospy.loginfo('Taking off')
         resp = self.takeoff(altitude = alt)
@@ -170,6 +192,7 @@ class drone():
             pass
         rospy.loginfo(resp)
 
+
     def gps_cb(self,data):
         if data:
             self.gps_now.header  = data.header
@@ -177,6 +200,7 @@ class drone():
             self.gps_now.longitude = data.longitude
             self.gps_now.altitude = data.altitude
         return
+
 
     def wp_cb(self,data):
         if data:
