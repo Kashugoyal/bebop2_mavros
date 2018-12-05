@@ -5,15 +5,16 @@ import math
 from copy import deepcopy
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import NavSatFix, BatteryState
-from mavros_msgs.msg import Waypoint, WaypointReached, State
+from mavros_msgs.msg import Waypoint, WaypointReached, State, HomePosition
 from mavros_msgs.srv import SetMode, StreamRate, StreamRateRequest
-from mavros_msgs.srv import CommandTOL, CommandBool
+from mavros_msgs.srv import CommandTOL, CommandBool, CommandHome
 from mavros_msgs.srv import WaypointPush
 
 class drone():
 
     def __init__(self):
         self.gps_now = NavSatFix()
+        self.gps_home = HomePosition()
         self.pose = PoseStamped()
         self.target_pose = PoseStamped()
         self.num_wp = 0
@@ -21,13 +22,15 @@ class drone():
         self.armed = False
         self.curr_mode = None
         rospy.wait_for_service('/mavros/set_mode')
-        rospy.wait_for_service('/mavros/cmd/takeoff')
         rospy.wait_for_service('/mavros/cmd/arming')
+        rospy.wait_for_service('/mavros/cmd/takeoff')
+        rospy.wait_for_service('/mavros/cmd/set_home')
         rospy.wait_for_service('/mavros/mission/push')
         rospy.wait_for_service('/mavros/set_stream_rate')
         #set up topic subscribers
         rospy.Subscriber('/mavros/global_position/raw/fix', NavSatFix, self.gps_cb)
         rospy.Subscriber('/mavros/local_position/pose', PoseStamped, self.pose_cb)
+        rospy.Subscriber('/mavros/home_position/home', HomePosition, self.home_cb)
         rospy.Subscriber('/mavros/mission/reached', WaypointReached, self.wp_cb)
         rospy.Subscriber('/mavros/battery', BatteryState, self.battery_cb)
         rospy.Subscriber('/mavros/state', State, self.state_cb)
@@ -39,6 +42,7 @@ class drone():
         self.takeoff = rospy.ServiceProxy('/mavros/cmd/takeoff', CommandTOL)
         self.arming = rospy.ServiceProxy('/mavros/cmd/arming', CommandBool)
         self.send_wp = rospy.ServiceProxy('/mavros/mission/push', WaypointPush)
+        self.set_home = rospy.ServiceProxy('/mavros/cmd/set_home',CommandHome)
         # set stream using the service
         self.set_stream()
         rospy.on_shutdown(self.land)
@@ -80,10 +84,14 @@ class drone():
         return self.gps_home.latitude , self.gps_home.longitude, self.gps_home.altitude
 
 
+    def get_gps_now(self):
+        return self.gps_now.latitude , self.gps_now.longitude, self.gps_now.altitude
+
     def go_to_pos(self,x,y,z = 3.0):
         self.target_pose.pose.position.x = x
         self.target_pose.pose.position.y = y
         self.target_pose.pose.position.z = z
+        self.target_pose.header.frame_id = 'local_origin_ned'
         rospy.loginfo('Going to point {} , {}, {}'.format(x,y,z))
         self.set_pos.publish(self.target_pose)
         while self.cart_distance(self.target_pose, self.pose) > 1:
@@ -92,6 +100,11 @@ class drone():
             pass
         rospy.loginfo('Setpoint achieved')
 
+
+    def home_cb(self, data):
+        if data:
+            self.gps_home = data
+        return
 
     def land(self):
         self.mode('9')
@@ -142,7 +155,9 @@ class drone():
     def send_mission_from_file(self):
         mission = []
         user_dir = os.path.expanduser('~')
-        filename = user_dir + '/ardu_ws/src/bebop2_mavros/scripts/path.txt'
+        # replace with your workspace path
+        ws_path = '/ardu_ws/src'
+        filename = user_dir + ws_path + '/bebop2_mavros/scripts/path.txt'
         with open(filename,'r') as file:
             for idx, row in enumerate(file):
                 wp = Waypoint()
@@ -157,14 +172,18 @@ class drone():
         rospy.loginfo(resp)
 
 
-    def set_gps_home(self):
+    def set_gps_home(self, lat = 0.0, lon = 0.0, alt = 0.0, curr_gps = False):
         if self.gps_now.header.seq:
-            self.gps_home = deepcopy(self.gps_now)
-            print 'setting home'
+            if curr_gps:
+                rospy.loginfo('Setting home to curr_gps')
+            else:
+                rospy.loginfo('setting home to {} , {}, {}'.format(lat,lon,alt))
+            resp = self.set_home(curr_gps, lat, lon, alt)
+            rospy.loginfo(resp)
         else:
             rospy.logwarn('GPS not available')
             rospy.sleep(1)
-            self.set_gps_home()
+            self.set_gps_home(lat, lon, alt, curr_gps)
 
 
     def set_stream(self):
