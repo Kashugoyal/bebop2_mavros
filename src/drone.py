@@ -16,7 +16,6 @@ class drone():
         self.gps_now = NavSatFix()
         self.gps_home = HomePosition()
         self.pose = PoseStamped()
-        self.target_pose = PoseStamped()
         self.num_wp = 0
         self.curr_wp = None
         self.armed = False
@@ -88,13 +87,14 @@ class drone():
         return self.gps_now.latitude , self.gps_now.longitude, self.gps_now.altitude
 
     def go_to_pos(self,x,y,z = 3.0):
-        self.target_pose.pose.position.x = x
-        self.target_pose.pose.position.y = y
-        self.target_pose.pose.position.z = z
-        self.target_pose.header.frame_id = 'local_origin_ned'
+        target_pose = PoseStamped()
+        target_pose.pose.position.x = x
+        target_pose.pose.position.y = y
+        target_pose.pose.position.z = z
+        target_pose.header.frame_id = 'local_origin'
         rospy.loginfo('Going to point {} , {}, {}'.format(x,y,z))
-        self.set_pos.publish(self.target_pose)
-        while self.cart_distance(self.target_pose, self.pose) > 1:
+        self.set_pos.publish(target_pose)
+        while self.cart_distance(target_pose, self.pose) > 1:
             if rospy.is_shutdown():
                 break
             pass

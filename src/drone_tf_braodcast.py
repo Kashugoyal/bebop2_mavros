@@ -13,10 +13,8 @@ class drone():
     def tf_pose(self, data):
         if data:
             self.br.sendTransform((data.pose.position.x, data.pose.position.y, data.pose.position.z), ( data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, data.pose.orientation.w), rospy.Time.now(), "drone", "local_origin")
-            self.br.sendTransform((0, 0, 0), ( 0, 0, 0, 1.0), rospy.Time.now(), "test", "local_origin")
         else:
             self.br.sendTransform((0, 0, 0), ( 0, 0, 0, 1.0), rospy.Time.now(), "drone", "local_origin")
-            self.br.sendTransform((0, 0, 0), ( 0, 0, 0, 1.0), rospy.Time.now(), "test", "local_origin")
 
 
 

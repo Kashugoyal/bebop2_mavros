@@ -17,9 +17,9 @@ def main():
     bebop.mode('4')
     bebop.arm(True)
     bebop.take_off(3)
-    rospy.loginfo("Going into auto mode")
-    bebop.mode('3')
-    rospy.sleep(15)
+    # rospy.loginfo("Going into auto mode")
+    # bebop.mode('3')
+    # rospy.sleep(15)
 
     bebop.mode('4')
     rospy.sleep(5)
@@ -36,10 +36,10 @@ def main():
     targ_pose.pose.position.x = 0.0
     targ_pose.pose.position.y = 5.0
     targ_pose.pose.position.z = 0.0
-    targ_pose.pose.orientation.x = 0.0
-    targ_pose.pose.orientation.y = 0.0
-    targ_pose.pose.orientation.z = 0.0
-    targ_pose.pose.orientation.w = 0.0
+    # targ_pose.pose.orientation.x = 0.0
+    # targ_pose.pose.orientation.y = 0.0
+    # targ_pose.pose.orientation.z = 0.0
+    # targ_pose.pose.orientation.w = 1.0
 
     # rospy.sleep(10)
     listener.waitForTransform("drone", "local_origin", rospy.Time(), rospy.Duration(4.0))
@@ -64,7 +64,7 @@ def main():
     # bebop.go_to_pos(5.0, 0.0)
 
     # bebop.set_gps_home(home.geo.latitude, home.geo.longitude, home.geo.altitude)
-    bebop.mode('3')
+    # bebop.mode('3')
 
 #######################
 

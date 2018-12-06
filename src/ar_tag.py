@@ -49,24 +49,39 @@ class drone_adv(drone):
         '''
         trial , still working
         '''
-        listener = tf.TransformListener()
-        rospy.logwarn('Obstacle seen in the front, changing mode to GUIDED')
         self.mode('4')
         rospy.sleep(5)
-        # setting home
-        home = self.gps_home
-        self.set_gps_home(curr_gps = True)
-        # waiting before going to first target
-        rospy.sleep(10)
-        self.go_to_pos(0.0, 5.0)
+        listener = tf.TransformListener()
+        targ_pose = PoseStamped()
+        targ_pose.header.frame_id = 'drone'
+        targ_pose.pose.position.x = 0.0
+        targ_pose.pose.position.y = 5.0
+        targ_pose.pose.position.z = 0.0
+        # targ_pose.pose.orientation.x = 0.0
+        # targ_pose.pose.orientation.y = 0.0
+        # targ_pose.pose.orientation.z = 0.0
+        # targ_pose.pose.orientation.w = 1.0
+        # rospy.sleep(10)
+        listener.waitForTransform("drone", "local_origin", rospy.Time(), rospy.Duration(4.0))
+        target = listener.transformPose('local_origin', targ_pose)
+        print target.pose.position.x, target.pose.position.y
+        # self.mode('0')
+        self.go_to_pos(target.pose.position.x, target.pose.position.y)
         # rospy.sleep(10)
         # go forward
-        self.go_to_pos(5.0, 5.0)
+        targ_pose.pose.position.x = 5.0
+        targ_pose.pose.position.y = 0.0
+        target = listener.transformPose('local_origin', targ_pose)
+        self.go_to_pos(target.pose.position.x, target.pose.position.y)
+        # self.go_to_pos(5.0, 5.0)
         # rospy.sleep(10)
         # go right
-        self.go_to_pos(5.0, 0.0)
-
-        self.set_gps_home(home.geo.latitude, home.geo.longitude, home.geo.altitude)
+        targ_pose.pose.position.x = 0.0
+        targ_pose.pose.position.y = -5.0
+        target = listener.transformPose('local_origin', targ_pose)
+        self.go_to_pos(target.pose.position.x, target.pose.position.y)
+        # self.go_to_pos(5.0, 0.0)
+        # self.set_gps_home(home.geo.latitude, home.geo.longitude, home.geo.altitude)
         self.mode('3')
 
 
