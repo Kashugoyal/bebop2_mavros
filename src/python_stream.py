@@ -18,7 +18,7 @@ from cv_bridge import CvBridge, CvBridgeError
 # all interfaces)
 rospy.init_node('streamer')
 server_socket = socket.socket()
-server_socket.bind(('192.168.1.119', 7777))
+server_socket.bind(('192.168.1.126', 7777))
 server_socket.listen(0)
 
 # Accept a single connection and make a file-like object out of it
@@ -27,7 +27,7 @@ image_pub = rospy.Publisher("/usb_cam/image_raw",Image, queue_size = 1)
 bridge = CvBridge()
 
 try:
-   while True:
+   while not rospy.is_shutdown():
        # Read the length of the image as a 32-bit unsigned int. If the
        # length is zero, quit the loop
        image_len = struct.unpack('<L', connection.read(struct.calcsize('<L')))[0]
