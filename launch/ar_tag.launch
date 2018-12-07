@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
     <arg name="marker_size" default="4.4" />
     <arg name="max_new_marker_error" default="0.08" />
@@ -6,7 +7,7 @@
     <arg name="cam_info_topic" default="/usb_cam/camera_info" />    
     <arg name="output_frame" default="/camera" />
 
-    <node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />e>
+    <node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
 
 
 <!--     <node ns="camera1" pkg="image_proc" type="image_proc" name="image_procg" />
@@ -21,7 +22,6 @@
 
     <node pkg="tf" type="static_transform_publisher" name="mav_to_camera" output="screen" args="0 0 0 0.785398163 0 0 mav camera 10" />
 
-    <node pkg="rviz" type="rviz" name="rviz" />
 
 
 </launch>

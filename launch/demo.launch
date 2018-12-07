@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+
+<launch>
+
+    <arg name="enable_sonar" default= "0" />
+    <arg name="dodge_obstacle" default= "0" />
+
+    <param name="enable_sonar" type="bool" value = "$(arg enable_sonar)" />
+    <param name="dodge_obstacle" type="bool" value = "$(arg dodge_obstacle)" />
+
+    <include file="$(find bebop2_mavros)/launch/apm_sim.launch">
+    </include>
+
+    <node name="drone_tf_broadcast" pkg="bebop2_mavros" type="drone_tf_broadcast" if="$(arg dodge_obstacle)" />
+    <group unless = "$(arg enable_sonar)">
+        <include file="$(find bebop2_mavros)/launch/ar_tag.launch" />
+        <node name="camera_info_publisher" pkg="bebop2_mavros" type="camera_info_publisher" />
+        <node name="python_stream" pkg="bebop2_mavros" type="python_stream" />
+    </group>
+
+</launch>
