@@ -5,6 +5,16 @@
  
  The current project is a starting point for achieving this goal. Now the software can generate trajectory given a geofenced boundary and semantically labelled static obstacles, and follow the trajectory, and dodge dynamic obstacles. The obstacle are represented using AT Tags now. 
  
+### Summary
+Parrot Bebop2 is used just for the hardware. None of the parrogt SDK is used for this project. ArduCopter is used for Autopiloting. A Raspberry Pi zero w connected with a camera and a ultrasound sensor is used for dynamic obstacle detection. 
+
+The software works roughly in the following steps.
+- Open up a map around a gps coordinate,
+- Mark the area the drone need to cover by drawing a rectangle covering the area
+- Mark the static obstacles in thee same screen.
+- Now a trajectory will be generated.
+- Launch the demo.launch file. This will make the drone to go to the staring point, follow the trajectory avoiding obstacles and come backe to home position
+
 ### Uploading ardupilot to Bebop.
 
 
