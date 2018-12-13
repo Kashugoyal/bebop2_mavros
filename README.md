@@ -161,4 +161,13 @@ rosrun bebop2_mavros fly.py
 ```
 Now the drone should start following the trajectory generated previosly, and whenever there is an obstacle in the path (i.e an AR Tag ), the drone will either stop and wait until the obstacle is removed, or dodge the obstacle and move continue the mission, depending on our input
 
+### Streaming sensor data using Raspberry PI zero W
 
+### Additional Stuff
+As a part of this project, we had to research on various topics, other than that is currently implemented on the project. We experimented with RTK GPS, to get centimeter level accuracy, which had a real good performance. Research was done on a lot of available SLAM and visual odometry packages including ORB-SLAM, DSO, Hector SLAM.
+### Adding linux to bebop 
+
+### Future Work
+- Move the current code on to a fully opensource hardware, like pixhawk, removing the dependency on Parrot hartware, which is fully closed.
+- Use depth cameras, stereo or monocular camera with visual SLAM, to localise and identify obstacles.
+- Use RTK GPS and to improve the current precision of the drone.
