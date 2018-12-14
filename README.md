@@ -1,5 +1,7 @@
 # Autonomous Drone for farming
 
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID_HERE/0.jpg)](https://www.youtube.com/watch?v=DEVYSj1cbos)
+
 ### Objective
  The final objective of this project is to develop an autonomous drone for farming. Given a boundary, the drone should be able to generate trajectory to cover the entire field avoiding static prelabelled obstacles, follow the trajectory with a constant velocity and update the trajectory inorder to avoidng dynamiic obstacles in the path.
  
